@@ -1,4 +1,4 @@
-MyGMM
-=====
+Fama-McBeth regressions
+=======================
 
-My own implementation of the GMM estimator for educational purposes.
+The class allows to estimate risk premia in Fama-McBeth regressions with both 2-step OLS and GMM.
