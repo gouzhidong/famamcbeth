@@ -42,7 +42,7 @@ def test_default():
     risk_premia, beta = model.two_step_ols()
     beta_var = model.compute_theta_var(risk_premia, beta)
     Jstat, Jpval = model.jtest(beta, beta_var)
-    tstat = model.risk_premia_tstat(risk_premia, beta_var)
+    tstat = model.gamma_tstat(risk_premia, beta_var)
     print(risk_premia)
     print(tstat * 12**.5)
     print('J-stat = %.2f, p-value = %.2f' % (Jstat, Jpval))
