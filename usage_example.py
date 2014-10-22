@@ -17,7 +17,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-from FamaMcBeth.fama_mcbeth import FamaMcBeth
+from FamaMcBeth.fama_mcbeth import FamaMcBeth, convert_theta_to1d
 
 def import_data():
     parse = lambda x: dt.datetime.strptime(x, '%Y%m')
@@ -26,14 +26,14 @@ def import_data():
     rf_name = 'RF'
     data = pd.read_csv('FamaFrench.csv', index_col=date_name,
                      parse_dates=date_name, date_parser=parse)
-    
+
     riskfree = data[[rf_name]].values
     factors = data[factor_names].values
     # Augment factors with the constant
     factors = np.hstack((np.ones_like(riskfree), factors))
     portfolios = data[data.columns - factor_names - [rf_name]].values
     excess_ret = portfolios - riskfree
-    
+
     return factors, excess_ret
 
 def test_default():
@@ -41,21 +41,21 @@ def test_default():
     model = FamaMcBeth(factors, excess_ret)
     risk_premia, beta = model.two_step_ols()
     beta_var = model.compute_theta_var(risk_premia, beta)
-    Jstat, Jpval = model.jtest(beta, beta_var)
+    jstat, jpval = model.jtest(beta, beta_var)
     tstat = model.gamma_tstat(risk_premia, beta_var)
     print(risk_premia)
     print(tstat * 12**.5)
-    print('J-stat = %.2f, p-value = %.2f' % (Jstat, Jpval))
-    
-    theta = model.convert_theta_to1d(beta[1:], risk_premia)
+    print('J-stat = %.2f, p-value = %.2f' % (jstat, jpval))
+
+    theta = convert_theta_to1d(beta[1:], risk_premia)
     model.method = 'Powell'
     model.gmmest(theta)
     K = factors.shape[1]
-    
-    print(model.theta[-K:])
-    print(model.tstat[-K:])
-    print('J-stat = %.2f, p-value = %.2f' % (model.jstat, model.pval))
-    
+
+    print(model.results.theta[-K:])
+    print(model.results.tstat[-K:])
+    print('J-stat = %.2f, p-value = %.2f' % (jstat, jpval))
+
 
 if __name__ == '__main__':
     np.set_printoptions(precision=3, suppress=True)
