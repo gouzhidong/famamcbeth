@@ -22,13 +22,15 @@ from __future__ import print_function, division
 import numpy as np
 from scipy.stats import chi2
 
-from MyGMM.gmm import GMM
+from MyGMM import GMM
 
 __author__ = "Stanislav Khrapov"
 __email__ = "khrapovs@gmail.com"
 __status__ = "Development"
 
+
 class FamaMcBeth(GMM):
+
     """Fama-McBeth regressions.
 
     It is assumed that:

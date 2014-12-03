@@ -17,7 +17,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-from FamaMcBeth.fama_mcbeth import FamaMcBeth, convert_theta_to1d
+from FamaMcBeth import FamaMcBeth, convert_theta_to1d
 
 def import_data():
     parse = lambda x: dt.datetime.strptime(x, '%Y%m')
@@ -37,6 +37,9 @@ def import_data():
     return factors, excess_ret
 
 def test_default():
+
+    np.set_printoptions(precision=3, suppress=True)
+
     factors, excess_ret = import_data()
     model = FamaMcBeth(factors, excess_ret)
     risk_premia, beta = model.two_step_ols()
@@ -54,9 +57,9 @@ def test_default():
 
     print(model.results.theta[-K:])
     print(model.results.tstat[-K:])
-    print('J-stat = %.2f, p-value = %.2f' % (jstat, jpval))
+    print('J-stat = %.2f, p-value = %.2f'
+        % (model.results.jstat, model.results.jpval))
 
 
 if __name__ == '__main__':
-    np.set_printoptions(precision=3, suppress=True)
     test_default()
