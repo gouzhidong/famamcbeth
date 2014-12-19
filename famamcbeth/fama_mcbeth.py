@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Fama-McBeth regressions.
+"""
+Fama-McBeth regressions
+=======================
 
 This module provides two estimators of risk premia in Fama-McBeth regressions:
 2-step OLS and GMM.
