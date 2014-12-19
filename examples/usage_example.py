@@ -1,15 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-
-Chapters 27.2-3 from
-http://www.kevinsheppard.com/images/0/09/Python_introduction.pdf
-
-Fama-French risk factors:
-http://www.kevinsheppard.com/images/0/0b/FamaFrench.zip
-
-GMM estimator is located here:
-https://github.com/khrapovs/MyGMM
+"""Usage examples
 
 """
 
@@ -17,15 +8,16 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-from FamaMcBeth import FamaMcBeth, convert_theta_to1d
+from famamcbeth import FamaMcBeth, convert_theta_to1d
+
 
 def import_data():
     parse = lambda x: dt.datetime.strptime(x, '%Y%m')
     date_name = 'date'
     factor_names = ['VWMe', 'SMB', 'HML']
     rf_name = 'RF'
-    data = pd.read_csv('FamaFrench.csv', index_col=date_name,
-                     parse_dates=date_name, date_parser=parse)
+    data = pd.read_csv('../data/FamaFrench.csv', index_col=date_name,
+                       parse_dates=date_name, date_parser=parse)
 
     riskfree = data[[rf_name]].values
     factors = data[factor_names].values
@@ -35,6 +27,7 @@ def import_data():
     excess_ret = portfolios - riskfree
 
     return factors, excess_ret
+
 
 def test_default():
 
@@ -58,7 +51,7 @@ def test_default():
     print(model.results.theta[-K:])
     print(model.results.tstat[-K:])
     print('J-stat = %.2f, p-value = %.2f'
-        % (model.results.jstat, model.results.jpval))
+          % (model.results.jstat, model.results.jpval))
 
 
 if __name__ == '__main__':

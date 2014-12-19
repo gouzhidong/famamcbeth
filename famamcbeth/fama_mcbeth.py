@@ -22,11 +22,13 @@ from __future__ import print_function, division
 import numpy as np
 from scipy.stats import chi2
 
-from MyGMM import GMM
+from mygmm import GMM
 
 __author__ = "Stanislav Khrapov"
 __email__ = "khrapovs@gmail.com"
 __status__ = "Development"
+
+__all__ = ['FamaMcBeth', 'convert_theta_to1d']
 
 
 class FamaMcBeth(GMM):
@@ -37,6 +39,18 @@ class FamaMcBeth(GMM):
     Time series regression: E[R_it - beta_i * f_t | f_t] = 0
     and
     Cross-sectional regression: E[R_it - beta_i * gamma] = 0
+
+    Attributes
+    ----------
+    factors
+    excess_ret
+
+    Methods
+    -------
+    two_step_ols
+    compute_theta_var
+    gamma_tstat
+    jtest
 
     """
 
@@ -273,5 +287,4 @@ def convert_theta_to1d(beta, gamma):
 
 
 if __name__ == '__main__':
-    import usage_example
-    usage_example.test_default()
+    pass
