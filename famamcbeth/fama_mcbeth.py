@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
+r"""
 Fama-McBeth regressions
 =======================
 
@@ -8,14 +8,11 @@ This module provides two estimators of risk premia in Fama-McBeth regressions:
 2-step OLS and GMM.
 
 The inspiration for this code comes from Chapters 27.2-3 of
-Kevin Sheppard's book "Python for Econometrics"
-http://www.kevinsheppard.com/images/0/09/Python_introduction.pdf
+Kevin Sheppard's book "Python for Econometrics":
+<http://www.kevinsheppard.com/images/0/09/Python_introduction.pdf>
 
 The data with Fama-French risk factors:
-http://www.kevinsheppard.com/images/0/0b/FamaFrench.zip
-
-GMM estimator is located here:
-https://github.com/khrapovs/MyGMM
+<http://www.kevinsheppard.com/images/0/0b/FamaFrench.zip>
 
 """
 from __future__ import print_function, division
@@ -34,17 +31,19 @@ __all__ = ['FamaMcBeth', 'convert_theta_to1d']
 
 class FamaMcBeth(object):
 
-    """Fama-McBeth regressions.
+    r"""Fama-McBeth regressions.
 
     It is assumed that:
-    Time series regression: E[R_it - beta_i * f_t | f_t] = 0
+    Time series regression: :math:`E\left[R_{it} - \beta_i * f_t | f_t\right] = 0`
     and
-    Cross-sectional regression: E[R_it - beta_i * gamma] = 0
+    Cross-sectional regression: :math:`E\left[R_{it} - \beta_i * \gamma\right] = 0`
 
     Attributes
     ----------
-    factors
-    excess_ret
+    factors : (dim_t, dim_k) array
+        Explanatory factors in the regression
+    excess_ret : (dim_t, dim_n) array
+        Portfolio excess returns that we are trying to explain
 
     Methods
     -------
