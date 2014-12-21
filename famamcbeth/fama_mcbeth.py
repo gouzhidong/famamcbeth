@@ -33,7 +33,7 @@ __status__ = "Development"
 __all__ = ['FamaMcBeth', 'convert_theta_to1d']
 
 
-class FamaMcBeth(GMM):
+class FamaMcBeth(object):
 
     """Fama-McBeth regressions.
 
@@ -258,6 +258,13 @@ class FamaMcBeth(GMM):
         dmoments[dim_n*dim_k:, dim_n*dim_k:] = -beta.T
 
         return moments, dmoments.T
+
+    def gmmest(self, theta, **kwargs):
+        """Estimate model parameters using GMM.
+
+        """
+        estimator = GMM(self.momcond)
+        return estimator.gmmest(theta, **kwargs)
 
     def callback(self, theta):
         """Callback function to run after each optimization iteration.

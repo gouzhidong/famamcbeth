@@ -45,13 +45,13 @@ def test_default():
 
     theta = convert_theta_to1d(beta[1:], risk_premia)
     model.method = 'Powell'
-    model.gmmest(theta)
+    res = model.gmmest(theta)
     K = factors.shape[1]
 
-    print(model.results.theta[-K:])
-    print(model.results.tstat[-K:])
+    print(res.theta[-K:])
+    print(res.tstat[-K:])
     print('J-stat = %.2f, p-value = %.2f'
-          % (model.results.jstat, model.results.jpval))
+          % (res.jstat, res.jpval))
 
 
 if __name__ == '__main__':
