@@ -18,7 +18,6 @@ GMM estimator is located here:
 https://github.com/khrapovs/MyGMM
 
 """
-
 from __future__ import print_function, division
 
 import numpy as np
@@ -50,9 +49,13 @@ class FamaMcBeth(object):
     Methods
     -------
     two_step_ols
+        Two-step OLS estimator
     compute_theta_var
+        Estimate variance of the 2-step OLS estimator
     gamma_tstat
+        T-statistics for risk premia estimates
     jtest
+        J-test for misspecification of the model
 
     """
 
@@ -67,9 +70,6 @@ class FamaMcBeth(object):
             Portfolio excess returns that we are trying to explain
 
         """
-        # For GMM estimation we need this to be a subclass of the GMM.
-        # Hence, we need to initialize it first.
-        super(FamaMcBeth, self).__init__()
         # Store data internally.
         self.factors, self.excess_ret = factors, excess_ret
 
