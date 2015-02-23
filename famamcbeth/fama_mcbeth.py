@@ -33,10 +33,11 @@ class FamaMcBeth(object):
 
     r"""Fama-McBeth regressions.
 
-    It is assumed that:
-    Time series regression: :math:`E\left[R_{it} - \beta_i * f_t | f_t\right] = 0`
+    Time series regression:
+    :math:`E\left[R_{it} - \beta_i * f_t | f_t\right] = 0`
     and
-    Cross-sectional regression: :math:`E\left[R_{it} - \beta_i * \gamma\right] = 0`
+    Cross-sectional regression:
+    :math:`E\left[R_{it} - \beta_i * \gamma\right] = 0`
 
     Attributes
     ----------
@@ -96,19 +97,40 @@ class FamaMcBeth(object):
         -------
         gamma : (dim_k,) array
             Risk premia
+        gamma_stde : (dim_k, ) array
+            Standard errors
+        gamma_rsq : (1, ) array
+            R-squared for one cross-sectional regression
         theta : (dim_k, dim_n) array
-            Risk exposures
+            Risk exposures [alpha, beta]
+        theta_stde : (dim_k, dim_n) array
+            Standard errors
+        theta_rsq : (dim_n, ) array
+            R-squared for each time series regression
 
         """
+        dim_t, dim_n, dim_k = self.__get_dimensions()
         # Time series regressions
         out = np.linalg.lstsq(self.factors, self.excess_ret)
         theta = out[0]
+        theta_rmse = (out[1] / dim_t) ** .5
+        xxinv = np.linalg.inv(self.factors.T.dot(self.factors))
+        theta_stde = theta_rmse * np.diag(xxinv)[:, np.newaxis] ** .5
+        theta_rsq = theta_rmse**2 / self.excess_ret.var(0)
+
         beta = theta[1:]
         mean_excess_ret = self.excess_ret.mean(0)
         # Cross-section regression
-        gamma = np.linalg.lstsq(beta.T, mean_excess_ret.T)[0]
+        out = np.linalg.lstsq(beta.T, mean_excess_ret.T)
+        gamma = out[0]
 
-        return gamma, theta
+        gamma_rmse = (out[1] / dim_t) ** .5
+        xxinv = np.linalg.inv(beta.dot(beta.T))
+        gamma_stde = gamma_rmse * np.diag(xxinv) ** .5
+        gamma_rsq = gamma_rmse**2 / mean_excess_ret.var()
+
+        return (gamma, gamma_stde, gamma_rsq, gamma_rmse,
+                theta, theta_stde, theta_rsq, theta_rmse)
 
     def compute_theta_var(self, gamma, theta):
         """Estimate variance of the 2-step OLS estimator.
