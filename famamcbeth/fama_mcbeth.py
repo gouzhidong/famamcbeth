@@ -114,8 +114,6 @@ class FamaMcBeth(object):
         out = np.linalg.lstsq(self.factors, self.excess_ret)
         theta = out[0]
         theta_rmse = (out[1] / dim_t) ** .5
-        xxinv = np.linalg.inv(self.factors.T.dot(self.factors))
-        theta_stde = theta_rmse * np.diag(xxinv)[:, np.newaxis] ** .5
         theta_rsq = theta_rmse**2 / self.excess_ret.var(0)
 
         beta = theta[1:]
@@ -124,13 +122,11 @@ class FamaMcBeth(object):
         out = np.linalg.lstsq(beta.T, mean_excess_ret.T)
         gamma = out[0]
 
-        gamma_rmse = (out[1] / dim_t) ** .5
-        xxinv = np.linalg.inv(beta.dot(beta.T))
-        gamma_stde = gamma_rmse * np.diag(xxinv) ** .5
+        gamma_rmse = (out[1] / dim_n) ** .5
         gamma_rsq = gamma_rmse**2 / mean_excess_ret.var()
 
-        return (gamma, gamma_stde, gamma_rsq, gamma_rmse,
-                theta, theta_stde, theta_rsq, theta_rmse)
+        return (gamma, gamma_rsq * 100, gamma_rmse,
+                theta, theta_rsq * 100, theta_rmse)
 
     def compute_theta_var(self, gamma, theta):
         """Estimate variance of the 2-step OLS estimator.
@@ -195,6 +191,61 @@ class FamaMcBeth(object):
         dim_n, dim_k = self.__get_dimensions()[1:]
         return gamma / np.diag(theta_var[dim_n*dim_k:, dim_n*dim_k:])**.5
 
+    def param_stde(self, theta_var):
+        """Standard errors for parameter estimates.
+
+        Parameters
+        ----------
+        theta_var : (dim_n*(dim_k+1), dim_n*(dim_k+1)) array
+            Variance matrix of all parameters
+
+        Returns
+        -------
+        (dim_n*(dim_k+1), ) array
+
+        """
+        return np.diag(theta_var)**.5
+
+    def param_tstat(self, theta, theta_var):
+        """T-statistics for parameter estimates.
+
+        Parameters
+        ----------
+        theta_var : (dim_n*(dim_k+1), dim_n*(dim_k+1)) array
+            Variance matrix of all parameters
+
+        Returns
+        -------
+        (dim_n*(dim_k+1), ) array
+
+        """
+        return theta / self.param_stde(theta_var)
+
+    def gamma_theta_stde(self, gamma, theta):
+        """Standard errors for parameter estimates.
+
+        Parameters
+        ----------
+        gamma : (dim_k,) array
+            Risk premia
+        beta : (dim_k, dim_n) array
+            Risk exposures
+
+        Returns
+        -------
+        (dim_k, dim_n) array
+            Stde for risk exposures
+        (dim_k,) array
+            Stde for risk premia
+
+        """
+        param_var = self.compute_theta_var(gamma, theta)
+        stde = self.param_stde(param_var)
+        dim_n, dim_k = self.__get_dimensions()[1:]
+        beta_stde = np.reshape(stde[:dim_n*dim_k], (dim_n, dim_k)).T
+        gamma_stde = stde[dim_n*dim_k:]
+        return beta_stde, gamma_stde
+
     def jtest(self, theta, theta_var):
         """J-test for misspecification of the model.
 
@@ -220,7 +271,7 @@ class FamaMcBeth(object):
         inv_var = np.linalg.inv(alpha_var)
         jstat = alpha.dot(inv_var).dot(alpha[np.newaxis, :].T)[0]
         jpval = 1 - chi2(dim_n).cdf(jstat)
-        return jstat, jpval
+        return jstat, jpval*100
 
     def convert_theta_to2d(self, theta):
         """Convert parameter vector to matrices.
