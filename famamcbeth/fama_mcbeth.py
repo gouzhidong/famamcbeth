@@ -95,7 +95,7 @@ class FamaMcBeth(object):
 
         Returns
         -------
-        gamma : (dim_k,) array
+        gamma : (dim_k, ) array
             Risk premia
         gamma_stde : (dim_k, ) array
             Standard errors
@@ -127,51 +127,6 @@ class FamaMcBeth(object):
 
         return (gamma, gamma_rsq * 100, gamma_rmse,
                 theta, theta_rsq * 100, theta_rmse)
-
-    def compute_theta_var(self, gamma, theta):
-        """Estimate variance of the 2-step OLS estimator.
-
-        Parameters
-        ----------
-        gamma : (dim_k,) array
-            Risk premia
-        theta : (dim_k, dim_n) array
-            Risk exposures
-
-        Returns
-        -------
-        (dim_n*(dim_k+1), dim_n*(dim_k+1)) array
-            Variance matrix of the estimator
-
-        """
-
-        dim_t, dim_n, dim_k = self.__get_dimensions()
-        beta = theta[1:]
-        # Moment conditions
-        errors1 = self.excess_ret - self.factors.dot(theta)
-        moments1 = errors1[:, :, np.newaxis] * self.factors[:, np.newaxis, :]
-        moments1 = moments1.reshape(dim_t, dim_n*dim_k)
-
-        errors2 = self.excess_ret - gamma.T.dot(beta)
-        moments2 = errors2.dot(beta.T)
-        # Score covariance
-        score_var = np.cov(np.hstack((moments1, moments2)).T)
-        # Jacobian
-        gradient = np.zeros_like(score_var)
-        sigmax = self.factors.T.dot(self.factors) / dim_t
-
-        gradient[:dim_n*dim_k, :dim_n*dim_k] = np.kron(np.eye(dim_n), sigmax)
-        gradient[dim_n*dim_k:, dim_n*dim_k:] = -beta.dot(beta.T)
-
-        for i in range(dim_n):
-            temp = np.zeros((dim_k-1, dim_k))
-            values = np.mean(errors2[:, i]) - beta[:, i] * gamma
-            temp[:, 1:] = np.diag(values)
-            gradient[dim_n*dim_k:, i*dim_k:(i+1)*dim_k] = temp
-
-        invgradient = np.linalg.inv(gradient)
-
-        return invgradient.T.dot(score_var).dot(invgradient) / dim_t
 
     def gamma_tstat(self, gamma, theta_var):
         """T-statistics for risk premia estimates.
@@ -278,23 +233,25 @@ class FamaMcBeth(object):
 
         Parameters
         ----------
-        theta : (dim_n*(dim_k+1),) array
+        theta : (dim_n*(dim_k+1), ) array
 
         Returns
         -------
+        alpha : (dim_n, ) array
+            Intercepts in time series regressions
         beta : (dim_k, dim_n) array
             Risk exposures
-        gamma : (dim_k,) array
+        gamma : (dim_k, ) array
             Risk premia
 
         """
         dim_n, dim_k = self.__get_dimensions()[1:]
-        dim_k -= 1
-        beta = np.reshape(theta[:dim_n*dim_k], (dim_n, dim_k))
-        gamma = np.reshape(theta[dim_n*dim_k:], (dim_k, 1))
-        return beta, gamma
+        alpha = theta[:dim_n]
+        beta = np.reshape(theta[dim_n:dim_n*dim_k], (dim_n, dim_k-1))
+        gamma = np.reshape(theta[dim_n*dim_k:], (dim_k-1, 1))
+        return alpha, beta, gamma
 
-    def momcond(self, theta):
+    def momcond(self, theta, **kwargs):
         """Moment restrictions and avergae of its derivatives.
 
         Parameters
@@ -311,25 +268,49 @@ class FamaMcBeth(object):
         """
 
         dim_t, dim_n, dim_k = self.__get_dimensions()
-        dim_k -= 1
-        beta, gamma = self.convert_theta_to2d(theta)
-        factors = self.factors[:, 1:]
+        alpha, beta, gamma = self.convert_theta_to2d(theta)
 
-        errors1 = self.excess_ret - factors.dot(beta.T)
-        moments1 = errors1[:, :, np.newaxis] * factors[:, np.newaxis, :]
+        errors1 = self.excess_ret - alpha - self.factors[:, 1:].dot(beta.T)
+        moments1 = errors1[:, :, np.newaxis] * self.factors[:, np.newaxis, :]
         moments1 = moments1.reshape(dim_t, dim_n*dim_k)
 
-        moments2 = self.excess_ret - beta.dot(gamma).T
+        errors2 = self.excess_ret - beta.dot(gamma).T
+        moments2 = errors2.dot(beta)
+
         moments = np.hstack((moments1, moments2))
 
-        dmoments = np.zeros((dim_k*(dim_n+1), dim_n*(dim_k+1)))
-        factor_var = factors.T.dot(factors) / dim_t
-        dmoments[:dim_n*dim_k, :dim_n*dim_k] = np.kron(np.eye(dim_n),
-                                                       factor_var)
-        dmoments[:dim_n*dim_k, dim_n*dim_k:] = np.kron(np.eye(dim_n), -gamma)
-        dmoments[dim_n*dim_k:, dim_n*dim_k:] = -beta.T
+        dmoments = np.zeros(((dim_n+1)*dim_k-1, (dim_n+1)*dim_k-1))
+        factor_var = self.factors.T.dot(self.factors) / dim_t
+        dmoments[:dim_n*dim_k, :dim_n*dim_k] = np.kron(np.eye(dim_n), factor_var)
+        dmoments[dim_n*dim_k:, dim_n*dim_k:] = -beta.T.dot(beta)
+
+        for i in range(dim_n):
+            temp = np.zeros((dim_k-1, dim_k))
+            values = np.mean(errors2[:, i]) - beta.T[:, i] * gamma
+            temp[:, 1:] = np.diag(values)
+            dmoments[dim_n*dim_k:, i*dim_k:(i+1)*dim_k] = temp
 
         return moments, dmoments.T
+
+    def compute_theta_var(self, gamma, theta, kernel='SU'):
+        """Estimate variance of the 2-step OLS estimator.
+
+        Parameters
+        ----------
+        gamma : (dim_k,) array
+            Risk premia
+        theta : (dim_k, dim_n) array
+            Risk exposures
+
+        Returns
+        -------
+        ((dim_n+1)*dim_k-1, (dim_n+1)*dim_k-1) array
+            Variance matrix of the estimator
+
+        """
+        estimator = GMM(self.momcond)
+        theta = convert_theta_to1d(theta[0], theta[1:], gamma)
+        return estimator.varest(theta, kernel=kernel)
 
     def gmmest(self, theta, **kwargs):
         """Estimate model parameters using GMM.
@@ -349,11 +330,13 @@ class FamaMcBeth(object):
         pass
 
 
-def convert_theta_to1d(beta, gamma):
+def convert_theta_to1d(alpha, beta, gamma):
     """Convert parameter matrices to 1d vector.
 
     Parameters
     ----------
+    alpha : (dim_n, ) array
+        Intercepts in time series regressions
     beta : (dim_k, dim_n) array
         Risk exposures
     gamma : (dim_k,) array
@@ -364,7 +347,7 @@ def convert_theta_to1d(beta, gamma):
     (dim_n*(dim_k+1),) array
 
     """
-    return np.concatenate((beta.flatten(), gamma))
+    return np.concatenate((alpha, beta.flatten(), gamma))
 
 
 if __name__ == '__main__':

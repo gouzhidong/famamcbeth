@@ -35,24 +35,29 @@ def test_default():
 
     factors, excess_ret = import_data()
     model = FamaMcBeth(factors, excess_ret)
-    risk_premia, beta = model.two_step_ols()
-    beta_var = model.compute_theta_var(risk_premia, beta)
+    (risk_premia, gamma_rsq, gamma_rmse, beta, theta_rsq, theta_rmse) \
+        = model.two_step_ols()
+
+    beta_var = model.compute_theta_var(risk_premia, beta, kernel='Bartlett')
     jstat, jpval = model.jtest(beta, beta_var)
     tstat = model.gamma_tstat(risk_premia, beta_var)
+
+    print('OLS results:')
     print(risk_premia)
     print(tstat * 12**.5)
-    print('J-stat = %.2f, p-value = %.2f' % (jstat, jpval))
+    print('J-stat = %.2f, p-value = %.2f\n' % (jstat, jpval))
 
-    theta = convert_theta_to1d(beta[1:], risk_premia)
+    theta = convert_theta_to1d(beta[0], beta[1:], risk_premia)
     model.method = 'Powell'
     res = model.gmmest(theta)
     K = factors.shape[1]
 
+    print('GMM results:')
     print(res.theta[-K:])
     print(res.tstat[-K:])
-    print('J-stat = %.2f, p-value = %.2f'
-          % (res.jstat, res.jpval))
+    print('J-stat = %.2f, p-value = %.2f' % (res.jstat, res.jpval))
 
 
 if __name__ == '__main__':
+
     test_default()
