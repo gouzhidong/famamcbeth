@@ -141,7 +141,7 @@ class FamaMcBeth(object):
         return (param, gamma_rsq * 100, gamma_rmse,
                 theta_rsq * 100, theta_rmse)
 
-    def param_stde(self, theta, kernel='SU'):
+    def param_stde(self, theta, **kwargs):
         """Standard errors for parameter estimates.
 
         Parameters
@@ -156,9 +156,10 @@ class FamaMcBeth(object):
         (dim_k*(dim_n+1)-1, ) array
 
         """
-        return np.diag(self.compute_theta_var(theta, kernel=kernel))**.5
+        var = self.compute_theta_var(theta, **kwargs)
+        return np.diag(var)**.5
 
-    def param_tstat(self, theta, kernel='SU'):
+    def param_tstat(self, theta, **kwargs):
         """T-statistics for parameter estimates.
 
         Parameters
@@ -173,9 +174,9 @@ class FamaMcBeth(object):
         (dim_k*(dim_n+1)-1, ) array
 
         """
-        return theta / self.param_stde(theta, kernel=kernel)
+        return theta / self.param_stde(theta, **kwargs)
 
-    def alpha_beta_gamma_stde(self, theta, kernel='SU'):
+    def alpha_beta_gamma_stde(self, theta, **kwargs):
         """Standard errors for parameter estimates.
 
         Parameters
@@ -195,9 +196,10 @@ class FamaMcBeth(object):
             Risk premia
 
         """
-        return self.convert_theta_to2d(self.param_stde(theta, kernel=kernel))
+        stde = self.param_stde(theta, **kwargs)
+        return self.convert_theta_to2d(stde)
 
-    def alpha_beta_gamma_tstat(self, theta, kernel='SU'):
+    def alpha_beta_gamma_tstat(self, theta, **kwargs):
         """Standard errors for parameter estimates.
 
         Parameters
@@ -217,9 +219,10 @@ class FamaMcBeth(object):
             Risk premia
 
         """
-        return self.convert_theta_to2d(self.param_tstat(theta, kernel=kernel))
+        tstat = self.param_tstat(theta, **kwargs)
+        return self.convert_theta_to2d(tstat)
 
-    def jtest(self, theta, kernel='SU'):
+    def jtest(self, theta, **kwargs):
         """J-test for misspecification of the model.
 
         Tests whether all intercepts alphas are simultaneously zero.
@@ -241,7 +244,7 @@ class FamaMcBeth(object):
         """
 
         dim_n, dim_k = self.__get_dimensions()[1:]
-        param_var = self.compute_theta_var(theta, kernel=kernel)
+        param_var = self.compute_theta_var(theta, **kwargs)
         alpha_var = param_var[0:dim_n*dim_k:dim_k, 0:dim_n*dim_k:dim_k]
         inv_var = np.linalg.inv(alpha_var)
         alpha = self.convert_theta_to2d(theta)[0]
@@ -322,7 +325,7 @@ class FamaMcBeth(object):
 
         return moments, dmoments.T
 
-    def compute_theta_var(self, theta, kernel='SU'):
+    def compute_theta_var(self, theta, **kwargs):
         """Estimate variance of the estimator using GMM variance matrix.
 
         Parameters
@@ -337,7 +340,7 @@ class FamaMcBeth(object):
 
         """
         estimator = GMM(self.momcond)
-        return estimator.varest(theta, kernel=kernel)
+        return estimator.varest(theta, **kwargs)
 
     def gmmest(self, theta, **kwargs):
         """Estimate model parameters using GMM.
@@ -345,6 +348,34 @@ class FamaMcBeth(object):
         """
         estimator = GMM(self.momcond)
         return estimator.gmmest(theta, **kwargs)
+
+    def get_realized_ret(self):
+        """Estimate variance of the estimator using GMM variance matrix.
+
+        Returns
+        -------
+        (dim_n, ) array
+            Realized average (across time) returns
+
+        """
+        return self.excess_ret.mean(0)
+
+    def get_predicted_ret(self, param):
+        """Estimate variance of the estimator using GMM variance matrix.
+
+        Parameters
+        ----------
+        param : (dim_k*(dim_n+1)-1, ) array
+            Model parameters
+
+        Returns
+        -------
+        (dim_n, ) array
+            Predicted average (across time) returns
+
+        """
+        beta, gamma = self.convert_theta_to2d(param)[1:]
+        return beta.T.dot(gamma)
 
 
 def convert_theta_to1d(alpha, beta, gamma):

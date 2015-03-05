@@ -42,8 +42,9 @@ def test_default():
     alpha, beta, gamma = model.convert_theta_to2d(param)
 
     kernel = 'Bartlett'
-    jstat, jpval = model.jtest(param, kernel=kernel)
-    tstat = model.alpha_beta_gamma_tstat(param, kernel=kernel)
+    band = 3
+    jstat, jpval = model.jtest(param, kernel=kernel, band=band)
+    tstat = model.alpha_beta_gamma_tstat(param, kernel=kernel, band=band)
     alpha_tstat, beta_tstat, gamma_tstat = tstat
 
     print('OLS results:')
@@ -52,7 +53,7 @@ def test_default():
     print('J-stat = %.2f, p-value = %.2f\n' % (jstat, jpval))
 
     model.method = 'Powell'
-    res = model.gmmest(param*2, kernel=kernel)
+    res = model.gmmest(param, kernel=kernel, band=band)
     param_final = model.convert_theta_to2d(res.theta)
     alpha_final, beta_final, gamma_final = param_final
     tstat_final = model.convert_theta_to2d(res.tstat)
@@ -61,12 +62,12 @@ def test_default():
     print('GMM results:')
     print(gamma_final)
     print(gamma_tstat)
-    jstat, jpval = model.jtest(res.theta, kernel=kernel)
+    jstat, jpval = model.jtest(res.theta, kernel=kernel, band=band)
     print('J-stat = %.2f, p-value = %.2f' % (res.jstat, res.jpval))
     print('J-stat = %.2f, p-value = %.2f' % (jstat, jpval))
 
-    ret_realized = model.excess_ret.mean(0)
-    ret_predicted = beta.T.dot(gamma)
+    ret_realized = model.get_realized_ret()
+    ret_predicted = model.get_predicted_ret(res.theta)
 
     plt.scatter(ret_realized, ret_predicted)
     x = np.linspace(*plt.gca().get_xlim())
