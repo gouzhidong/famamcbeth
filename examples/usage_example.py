@@ -52,8 +52,8 @@ def test_default():
     print(gamma_tstat)
     print('J-stat = %.2f, p-value = %.2f\n' % (jstat, jpval))
 
-    model.method = 'Powell'
-    res = model.gmmest(param, kernel=kernel, band=band)
+    method = 'L-BFGS-B'
+    res = model.gmmest(param, kernel=kernel, band=band, method=method)
     param_final = model.convert_theta_to2d(res.theta)
     alpha_final, beta_final, gamma_final = param_final
     tstat_final = model.convert_theta_to2d(res.tstat)
