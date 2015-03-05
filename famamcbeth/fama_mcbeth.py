@@ -153,7 +153,9 @@ class FamaMcBeth(object):
 
         """
         var = self.compute_theta_var(theta, **kwargs)
-        return np.diag(var)**.5
+        if (np.diag(var) < 0).any():
+            print('Variances are negative!')
+        return np.abs(np.diag(var))**.5
 
     def param_tstat(self, theta, **kwargs):
         """T-statistics for parameter estimates.
@@ -234,9 +236,16 @@ class FamaMcBeth(object):
         dim_n, dim_k = self.__get_dimensions()[1:]
         param_var = self.compute_theta_var(theta, **kwargs)
         alpha_var = param_var[0:dim_n*dim_k:dim_k, 0:dim_n*dim_k:dim_k]
-        inv_var = np.linalg.inv(alpha_var)
+        inv_var = np.linalg.pinv(alpha_var)
+        eig = np.linalg.eigvalsh(inv_var).min()
+        if eig <= 0:
+            inv_var -= np.eye(dim_n) * eig * 1.1
+        try:
+            np.linalg.cholesky(inv_var)
+        except np.linalg.LinAlgError:
+            print('Inverse of alpha variance is not positive definite!')
         alpha = self.convert_theta_to2d(theta)[0]
-        jstat = float(alpha.dot(inv_var).dot(alpha[np.newaxis, :].T))
+        jstat = (alpha.dot(inv_var) * alpha).sum()
         jpval = 1 - chi2(dim_n).cdf(jstat)
         return jstat, jpval*100
 
