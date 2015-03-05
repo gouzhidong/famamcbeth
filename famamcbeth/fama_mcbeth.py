@@ -97,14 +97,12 @@ class FamaMcBeth(object):
 
         Returns
         -------
-        gamma : (dim_k, ) array
-            Risk premia
+        theta : (dim_k*(dim_n+1)-1, ) array
+            Parameter vector
         gamma_stde : (dim_k, ) array
             Standard errors
         gamma_rsq : (1, ) array
             R-squared for one cross-sectional regression
-        theta : (dim_k, dim_n) array
-            Risk exposures [alpha, beta]
         theta_stde : (dim_k, dim_n) array
             Standard errors
         theta_rsq : (dim_n, ) array
@@ -148,8 +146,6 @@ class FamaMcBeth(object):
         ----------
         theta : (dim_k*(dim_n+1)-1, ) array
             Parameter vector
-        kernel : str
-            Kernel type for HAC estimation
 
         Returns
         -------
@@ -166,8 +162,6 @@ class FamaMcBeth(object):
         ----------
         theta : (dim_k*(dim_n+1)-1, ) array
             Parameter vector
-        kernel : str
-            Kernel type for HAC estimation
 
         Returns
         -------
@@ -183,8 +177,6 @@ class FamaMcBeth(object):
         ----------
         theta : (dim_k*(dim_n+1)-1, ) array
             Parameter vector
-        kernel : str
-            Kernel type for HAC estimation
 
         Returns
         -------
@@ -206,8 +198,6 @@ class FamaMcBeth(object):
         ----------
         theta : (dim_k*(dim_n+1)-1, ) array
             Parameter vector
-        kernel : str
-            Kernel type for HAC estimation
 
         Returns
         -------
@@ -231,8 +221,6 @@ class FamaMcBeth(object):
         ----------
         theta : (dim_k*(dim_n+1)-1, ) array
             Parameter vector
-        theta_var : (dim_k*(dim_n+1)-1, dim_k*(dim_n+1)-1) array
-            Variance matrix of all parameters
 
         Returns
         -------
