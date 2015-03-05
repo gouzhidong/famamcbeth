@@ -35,27 +35,33 @@ def test_default():
 
     factors, excess_ret = import_data()
     model = FamaMcBeth(factors, excess_ret)
-    (risk_premia, gamma_rsq, gamma_rmse, beta, theta_rsq, theta_rmse) \
+    (param, gamma_rsq, gamma_rmse, theta_rsq, theta_rmse) \
         = model.two_step_ols()
+    alpha, beta, gamma = model.convert_theta_to2d(param)
 
-    beta_var = model.compute_theta_var(risk_premia, beta, kernel='Bartlett')
-    jstat, jpval = model.jtest(beta, beta_var)
-    tstat = model.gamma_tstat(risk_premia, beta_var)
+    kernel = 'Bartlett'
+    jstat, jpval = model.jtest(param, kernel=kernel)
+    tstat = model.alpha_beta_gamma_tstat(param, kernel=kernel)
+    alpha_tstat, beta_tstat, gamma_tstat = tstat
 
     print('OLS results:')
-    print(risk_premia)
-    print(tstat * 12**.5)
+    print(gamma)
+    print(gamma_tstat)
     print('J-stat = %.2f, p-value = %.2f\n' % (jstat, jpval))
 
-    theta = convert_theta_to1d(beta[0], beta[1:], risk_premia)
     model.method = 'Powell'
-    res = model.gmmest(theta)
-    K = factors.shape[1]
+    res = model.gmmest(param*2, kernel=kernel)
+    param_final = model.convert_theta_to2d(res.theta)
+    alpha_final, beta_final, gamma_final = param_final
+    tstat_final = model.convert_theta_to2d(res.tstat)
+    alpha_tstat, beta_tstat, gamma_tstat = tstat_final
 
     print('GMM results:')
-    print(res.theta[-K:])
-    print(res.tstat[-K:])
+    print(gamma_final)
+    print(gamma_tstat)
+    jstat, jpval = model.jtest(res.theta, kernel=kernel)
     print('J-stat = %.2f, p-value = %.2f' % (res.jstat, res.jpval))
+    print('J-stat = %.2f, p-value = %.2f' % (jstat, jpval))
 
 
 if __name__ == '__main__':
