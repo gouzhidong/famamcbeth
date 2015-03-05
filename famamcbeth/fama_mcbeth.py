@@ -17,6 +17,8 @@ The data with Fama-French risk factors:
 """
 from __future__ import print_function, division
 
+import warnings
+
 import numpy as np
 from scipy.stats import chi2
 
@@ -242,7 +244,7 @@ class FamaMcBeth(object):
         try:
             np.linalg.cholesky(inv_var)
         except np.linalg.LinAlgError:
-            print('Inverse of alpha variance is not positive definite!')
+            warnings.warn('Inverse of alpha variance is not P.D.!')
         alpha = self.convert_theta_to2d(theta)[0]
         jstat = (alpha.dot(inv_var) * alpha).sum()
         jpval = 1 - chi2(dim_n).cdf(jstat)
