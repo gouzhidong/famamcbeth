@@ -7,6 +7,8 @@
 import pandas as pd
 import numpy as np
 import datetime as dt
+import matplotlib.pylab as plt
+import seaborn as sns
 
 from famamcbeth import FamaMcBeth, convert_theta_to1d
 
@@ -63,7 +65,18 @@ def test_default():
     print('J-stat = %.2f, p-value = %.2f' % (res.jstat, res.jpval))
     print('J-stat = %.2f, p-value = %.2f' % (jstat, jpval))
 
+    ret_realized = model.excess_ret.mean(0)
+    ret_predicted = beta.T.dot(gamma)
+
+    plt.scatter(ret_realized, ret_predicted)
+    x = np.linspace(*plt.gca().get_xlim())
+    plt.gca().plot(x, x)
+    plt.xlabel('Realized')
+    plt.ylabel('Predicted')
+    plt.show()
+
 
 if __name__ == '__main__':
 
+    sns.set_context('paper')
     test_default()
