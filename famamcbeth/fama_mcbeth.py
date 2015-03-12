@@ -114,13 +114,12 @@ class FamaMcBeth(object):
         """
         dim_t, dim_n, dim_k = self.__get_dimensions()
         # Time series regressions
-        out = np.linalg.lstsq(self.factors, self.excess_ret)
         # (dim_k, dim_n) array. This theta includes intercepts alpha
-        theta = out[0]
+        theta, resid = np.linalg.lstsq(self.factors, self.excess_ret)[:2]
         # float
-        theta_rmse = (out[1] / dim_t) ** .5
+        theta_rmse = (resid / dim_t) ** .5
         # float
-        theta_rsq = theta_rmse**2 / self.excess_ret.var(0)
+        theta_rsq = 100 * (1 - theta_rmse**2 / self.excess_ret.var(0))
 
         # (dim_n, ) array
         alpha = theta[0]
@@ -129,18 +128,16 @@ class FamaMcBeth(object):
         # (dim_n, ) array
         mean_excess_ret = self.excess_ret.mean(0)
         # Cross-section regression
-        out = np.linalg.lstsq(beta.T, mean_excess_ret.T)
         # (dim_k-1, ) array
-        gamma = out[0]
+        gamma, resid = np.linalg.lstsq(beta.T, mean_excess_ret.T)[:2]
         # float
-        gamma_rmse = (out[1] / dim_n) ** .5
+        gamma_rmse = (resid / dim_n) ** .5
         # float
-        gamma_rsq = gamma_rmse**2 / mean_excess_ret.var()
+        gamma_rsq = 100 * (1 - gamma_rmse**2 / mean_excess_ret.var())
 
         param = convert_theta_to1d(alpha, beta, gamma)
 
-        return (param, gamma_rsq * 100, gamma_rmse,
-                theta_rsq * 100, theta_rmse)
+        return param, gamma_rsq, gamma_rmse, theta_rsq, theta_rmse
 
     def param_stde(self, theta, **kwargs):
         """Standard errors for parameter estimates.

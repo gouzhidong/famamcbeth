@@ -3,6 +3,7 @@
 """Usage examples
 
 """
+from __future__ import print_function, division
 
 import pandas as pd
 import numpy as np
@@ -10,7 +11,7 @@ import datetime as dt
 import matplotlib.pylab as plt
 import seaborn as sns
 
-from famamcbeth import FamaMcBeth, convert_theta_to1d
+from famamcbeth import FamaMcBeth
 
 
 def import_data():
