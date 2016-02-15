@@ -20,6 +20,8 @@
 *.log
 *.png
 *.dat
+*.csv
+*.sas7bdat
 .ipynb_checkpoints
 build/
 *.egg-info

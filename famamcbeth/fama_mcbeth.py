@@ -133,7 +133,9 @@ class FamaMcBeth(object):
         # float
         gamma_rmse = (resid / dim_n) ** .5
         # float
-        gamma_rsq = 100 * (1 - gamma_rmse**2 / mean_excess_ret.var())
+        gamma_rsq = 1 - gamma_rmse**2 / mean_excess_ret.var()
+#        gamma_rsq = 1 - (1 - gamma_rsq) * (dim_n - 1) / (dim_n - dim_k - 1)
+        gamma_rsq *= 100
 
         param = convert_theta_to1d(alpha, beta, gamma)
 
